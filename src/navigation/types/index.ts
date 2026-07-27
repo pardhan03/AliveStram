@@ -11,6 +11,9 @@ export type MainTabParamList = {
 };
 
 export type RootStackParamList = {
+    // Splash Screen
+    SplashScreen: undefined;
+
     // Auth Stack Screens
     GoogleSignInScreen: undefined;
 
