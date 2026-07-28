@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,9 +10,12 @@ import {
   FlatList,
   Dimensions,
   StatusBar,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import Svg, { Rect, Circle, Path } from 'react-native-svg';
+import Svg, { Rect, Path } from 'react-native-svg';
 import { BellIcon, ShoppingBagIcon, EyeIcon } from '../../components/Icons';
+import { getLiveStreamers, StreamerItem } from '../../services/streamService';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 36) / 2;
@@ -23,7 +26,6 @@ const AliveLogo = () => (
     <View style={styles.logoBadge}>
       <Svg width={32} height={32} viewBox="0 0 36 36" fill="none">
         <Rect width="36" height="36" rx="10" fill="#68C700" />
-        {/* Camera body */}
         <Rect x="8" y="13" width="16" height="12" rx="3" fill="#FFFFFF" />
         <Path d="M24 16L29 13.5V22.5L24 20V16Z" fill="#FFFFFF" />
       </Svg>
@@ -31,66 +33,6 @@ const AliveLogo = () => (
     <Text style={styles.logoText}>Alive</Text>
   </View>
 );
-
-interface StreamerItem {
-  id: string;
-  name: string;
-  views: string;
-  flag: string;
-  imageUri: string;
-  avatarUri: string;
-}
-
-const DUMMY_STREAMS: StreamerItem[] = [
-  {
-    id: '1',
-    name: 'Sofia Chen',
-    views: '8.2K',
-    flag: '🇵🇭',
-    imageUri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    avatarUri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-  },
-  {
-    id: '2',
-    name: 'Sofia Chen',
-    views: '8.2K',
-    flag: '🇵🇭',
-    imageUri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-    avatarUri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
-  },
-  {
-    id: '3',
-    name: 'Sofia Chen',
-    views: '8.2K',
-    flag: '🇵🇭',
-    imageUri: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
-    avatarUri: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=150&q=80',
-  },
-  {
-    id: '4',
-    name: 'Sofia Chen',
-    views: '8.2K',
-    flag: '🇵🇭',
-    imageUri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
-    avatarUri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-  },
-  {
-    id: '5',
-    name: 'Sofia Chen',
-    views: '8.2K',
-    flag: '🇵🇭',
-    imageUri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-    avatarUri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-  },
-  {
-    id: '6',
-    name: 'Sofia Chen',
-    views: '8.2K',
-    flag: '🇵🇭',
-    imageUri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
-    avatarUri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80',
-  },
-];
 
 const COUNTRY_FILTERS = [
   { id: 'global', name: 'Global', icon: '🌐' },
@@ -103,6 +45,30 @@ const COUNTRY_FILTERS = [
 export const HomeScreen = () => {
   const [activeTab, setActiveTab] = useState<'Stream' | 'Hot' | 'Follow'>('Stream');
   const [selectedCountry, setSelectedCountry] = useState('global');
+  const [streamers, setStreamers] = useState<StreamerItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  const fetchStreamers = async () => {
+    try {
+      const data = await getLiveStreamers();
+      setStreamers(data);
+    } catch (error) {
+      console.error('Error loading streamers:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStreamers();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchStreamers();
+  };
 
   const renderStreamCard = ({ item }: { item: StreamerItem }) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.88}>
@@ -212,15 +178,30 @@ export const HomeScreen = () => {
         </View>
 
         {/* Live Streams Cards Grid */}
-        <FlatList
-          data={DUMMY_STREAMS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderStreamCard}
-          numColumns={2}
-          columnWrapperStyle={styles.gridRow}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.gridContentContainer}
-        />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#68C700" />
+            <Text style={styles.loadingText}>Loading Live Streams...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={streamers}
+            keyExtractor={(item) => item.id}
+            renderItem={renderStreamCard}
+            numColumns={2}
+            columnWrapperStyle={styles.gridRow}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.gridContentContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#68C700']}
+                tintColor="#68C700"
+              />
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -362,10 +343,22 @@ const styles = StyleSheet.create({
     color: '#111111',
     fontWeight: '700',
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 60,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#888888',
+  },
   gridContentContainer: {
     paddingHorizontal: 14,
     paddingTop: 12,
-    paddingBottom: 90, // Leave room for elevated bottom tab bar
+    paddingBottom: 90,
   },
   gridRow: {
     justifyContent: 'space-between',

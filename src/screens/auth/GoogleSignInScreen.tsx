@@ -13,6 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Svg, { Path } from 'react-native-svg';
 import { RootStackParamList } from '../../navigation/types';
 import { IMAGES } from '../../assets/images';
+import Config from "react-native-config";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GoogleSignInScreen'>;
 
