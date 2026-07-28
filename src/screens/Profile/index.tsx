@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,35 +10,20 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
-import { getCurrentUser, signOutUser } from '../../services/auth/authService';
-
-type ProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { CommonActions, useNavigation } from '@react-navigation/native';
+import { signOutUser } from '../../services/auth/authService';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { resetProfile } from '../../store/features/user/authSlice';
 
 export const ProfileScreen = () => {
-  const navigation = useNavigation<ProfileNavigationProp>();
-  const [displayName, setDisplayName] = useState<string>('Guest User');
-  const [email, setEmail] = useState<string>('No email');
-  const [photoURL, setPhotoURL] = useState<string | null>(null);
+  const navigation = useNavigation();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.auth.profile);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Refresh user data every time the screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      const user = getCurrentUser();
-      if (user) {
-        setDisplayName(user.displayName || 'Guest User');
-        setEmail(user.email || 'No email');
-        setPhotoURL(user.photoURL || null);
-      } else {
-        setDisplayName('Guest User');
-        setEmail('No email');
-        setPhotoURL(null);
-      }
-    }, []),
-  );
+  const displayName = profile?.displayName || 'Guest User';
+  const email = profile?.email || 'No email';
+  const photoURL = profile?.photoURL || null;
 
   const handleLogout = () => {
     Alert.alert(
@@ -53,10 +38,13 @@ export const ProfileScreen = () => {
             setIsLoggingOut(true);
             try {
               await signOutUser();
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'GoogleSignInScreen' }],
-              });
+              dispatch(resetProfile());
+              navigation.dispatch(
+                CommonActions.reset({
+                  index: 0,
+                  routes: [{ name: 'GoogleSignInScreen' }],
+                }),
+              );
             } catch (error: any) {
               Alert.alert('Error', 'Failed to logout. Please try again.');
               console.error('Logout error:', error);

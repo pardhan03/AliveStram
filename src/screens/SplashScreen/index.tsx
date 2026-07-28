@@ -12,12 +12,14 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { IMAGES } from '../../assets/images';
+import { useAppSelector } from '../../store/hooks';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SplashScreen'>;
 
 const { width } = Dimensions.get('window');
 
 export const SplashScreen: React.FC<Props> = ({ navigation }) => {
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const logoScale = useRef(new Animated.Value(0.6)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -55,13 +57,17 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
       ]),
     ]).start();
 
-    // Automatically navigate to GoogleSignInScreen after 2.5s
+    // Navigate based on persisted auth state
     const timer = setTimeout(() => {
-      navigation.replace('GoogleSignInScreen');
+      if (isAuthenticated) {
+        navigation.replace('MainTabs');
+      } else {
+        navigation.replace('GoogleSignInScreen');
+      }
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, [navigation, logoOpacity, logoScale, textOpacity, textTranslateY]);
+  }, [navigation, isAuthenticated, logoOpacity, logoScale, textOpacity, textTranslateY]);
 
   return (
     <View style={styles.container}>

@@ -20,6 +20,8 @@ import {
   signInWithGoogle,
   signInAsGuest,
 } from '../../services/auth/authService';
+import { useAppDispatch } from '../../store/hooks';
+import { saveProfile } from '../../store/features/user/authSlice';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GoogleSignInScreen'>;
 
@@ -48,6 +50,7 @@ const GoogleIcon = () => (
 );
 
 export const GoogleSignInScreen: React.FC<Props> = ({ navigation }) => {
+  const dispatch = useAppDispatch();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
   const [isLoadingGuest, setIsLoadingGuest] = useState(false);
 
@@ -63,6 +66,13 @@ export const GoogleSignInScreen: React.FC<Props> = ({ navigation }) => {
       const user = await signInWithGoogle();
 
       if (user) {
+        dispatch(saveProfile({
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          isAnonymous: user.isAnonymous,
+        }));
         navigation.replace('MainTabs');
       }
     } catch (error: any) {
@@ -83,11 +93,25 @@ export const GoogleSignInScreen: React.FC<Props> = ({ navigation }) => {
 
     setIsLoadingGuest(true);
     try {
-      await signInAsGuest();
+      const user = await signInAsGuest();
+      dispatch(saveProfile({
+        uid: user.uid,
+        displayName: user.displayName || 'Guest User',
+        email: user.email,
+        photoURL: user.photoURL,
+        isAnonymous: user.isAnonymous,
+      }));
       navigation.replace('MainTabs');
     } catch (error: any) {
       // Even if anonymous auth fails on firebase backend, allow entering as guest
       console.warn('Guest sign-in fallback:', error);
+      dispatch(saveProfile({
+        uid: 'guest',
+        displayName: 'Guest User',
+        email: null,
+        photoURL: null,
+        isAnonymous: true,
+      }));
       navigation.replace('MainTabs');
     } finally {
       setIsLoadingGuest(false);
