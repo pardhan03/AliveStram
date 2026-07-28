@@ -34,8 +34,14 @@ export const signInWithGoogle = async () => {
       throw new Error('Google Sign-In failed: Could not retrieve ID Token.');
     }
 
+    const { accessToken } = await GoogleSignin.getTokens();
+
+    if (!accessToken) {
+      throw new Error('Google Sign-In failed: Could not retrieve Access Token.');
+    }
+
     // Create Firebase Auth credential with the Google ID Token
-    const googleCredential = auth.GoogleAuthProvider.credential(idToken, idToken);
+    const googleCredential = auth.GoogleAuthProvider.credential(idToken, accessToken);
 
     // Sign in to Firebase with the credential
     const userCredential = await auth().signInWithCredential(googleCredential);
