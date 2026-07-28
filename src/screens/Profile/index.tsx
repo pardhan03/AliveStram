@@ -1,19 +1,90 @@
-import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { ProfileIcon } from '../../components/Icons';
+import React, { useState, useCallback } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  SafeAreaView,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+import { getCurrentUser, signOutUser } from '../../services/auth/authService';
+
+type ProfileNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProfileScreen = () => {
+  const navigation = useNavigation<ProfileNavigationProp>();
+  const [displayName, setDisplayName] = useState<string>('Guest User');
+  const [email, setEmail] = useState<string>('No email');
+  const [photoURL, setPhotoURL] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Refresh user data every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const user = getCurrentUser();
+      if (user) {
+        setDisplayName(user.displayName || 'Guest User');
+        setEmail(user.email || 'No email');
+        setPhotoURL(user.photoURL || null);
+      } else {
+        setDisplayName('Guest User');
+        setEmail('No email');
+        setPhotoURL(null);
+      }
+    }, []),
+  );
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoggingOut(true);
+            try {
+              await signOutUser();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'GoogleSignInScreen' }],
+              });
+            } catch (error: any) {
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+              console.error('Logout error:', error);
+            } finally {
+              setIsLoggingOut(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* User Card */}
         <View style={styles.profileCard}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' }}
-            style={styles.avatar}
-          />
-          <Text style={styles.userName}>Sofia Chen</Text>
-          <Text style={styles.userHandle}>ID: 88492019 • 🇵🇭 Philippines</Text>
+          {photoURL ? (
+            <Image source={{ uri: photoURL }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>
+                {displayName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <Text style={styles.userName}>{displayName}</Text>
+          <Text style={styles.userHandle}>{email}</Text>
 
           {/* Stats Bar */}
           <View style={styles.statsRow}>
@@ -52,6 +123,23 @@ export const ProfileScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          disabled={isLoggingOut}
+          activeOpacity={0.8}
+        >
+          {isLoggingOut ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <>
+              <Text style={styles.logoutIcon}>🚪</Text>
+              <Text style={styles.logoutText}>Logout</Text>
+            </>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -87,6 +175,16 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#76D200',
     marginBottom: 12,
+  },
+  avatarPlaceholder: {
+    backgroundColor: '#76D200',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitial: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   userName: {
     fontSize: 22,
@@ -162,5 +260,28 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#CCCCCC',
     fontWeight: '300',
+  },
+  logoutButton: {
+    marginTop: 20,
+    backgroundColor: '#E53935',
+    borderRadius: 16,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#E53935',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 10,
+  },
+  logoutIcon: {
+    fontSize: 20,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
