@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   SafeAreaView,
-  ScrollView,
   TouchableOpacity,
   Image,
   FlatList,
@@ -12,6 +11,8 @@ import {
   StatusBar,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  ScrollView,
 } from 'react-native';
 import Svg, { Rect, Path } from 'react-native-svg';
 import { BellIcon, ShoppingBagIcon, EyeIcon } from '../../components/Icons';
@@ -20,7 +21,6 @@ import { getLiveStreamers, StreamerItem } from '../../services/streamService';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 36) / 2;
 
-// Alive Brand Logo SVG
 const AliveLogo = () => (
   <View style={styles.logoContainer}>
     <View style={styles.logoBadge}>
@@ -45,42 +45,67 @@ const COUNTRY_FILTERS = [
 export const HomeScreen = () => {
   const [activeTab, setActiveTab] = useState<'Stream' | 'Hot' | 'Follow'>('Stream');
   const [selectedCountry, setSelectedCountry] = useState('global');
+  const [searchQuery, setSearchQuery] = useState('');
   const [streamers, setStreamers] = useState<StreamerItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
-  const fetchStreamers = async () => {
-    try {
-      const data = await getLiveStreamers();
-      setStreamers(data);
-    } catch (error) {
-      console.error('Error loading streamers:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true;
+
+    const fetchStreamers = async () => {
+      try {
+        const data = await getLiveStreamers(searchQuery, selectedCountry);
+        if (isMounted) {
+          setStreamers(data);
+        }
+      } catch (error) {
+        console.error('Error loading streamers:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    };
+
     fetchStreamers();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCountry]);
+
+  const filteredStreamers = useMemo(() => {
+    return streamers.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+    );
+  }, [streamers, searchQuery]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchStreamers();
+    getLiveStreamers(searchQuery, selectedCountry)
+      .then((data) => setStreamers(data))
+      .catch((err) => console.error(err))
+      .finally(() => setRefreshing(false));
   };
 
   const renderStreamCard = ({ item }: { item: StreamerItem }) => (
     <TouchableOpacity style={styles.card} activeOpacity={0.88}>
       <Image source={{ uri: item.imageUri }} style={styles.cardImage} />
 
-      {/* Viewers Pill */}
       <View style={styles.viewerBadge}>
         <EyeIcon size={12} color="#FFFFFF" />
         <Text style={styles.viewerText}>{item.views}</Text>
       </View>
 
-      {/* Bottom Info Overlay */}
+      {item.isLive && (
+        <View style={styles.liveBadge}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>LIVE</Text>
+        </View>
+      )}
+
       <View style={styles.cardBottomOverlay}>
         <View style={styles.userInfoRow}>
           <View style={styles.avatarWrapper}>
@@ -108,7 +133,6 @@ export const HomeScreen = () => {
           <AliveLogo />
 
           <View style={styles.headerRightActions}>
-            {/* Notification Bell */}
             <TouchableOpacity style={styles.iconCircle} activeOpacity={0.7}>
               <BellIcon size={22} color="#4A4A4A" />
               <View style={styles.badgeCount}>
@@ -116,14 +140,25 @@ export const HomeScreen = () => {
               </View>
             </TouchableOpacity>
 
-            {/* Shopping Bag Button */}
             <TouchableOpacity style={[styles.iconCircle, styles.bagCircle]} activeOpacity={0.7}>
               <ShoppingBagIcon size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Sub Header Tabs (Stream, Hot, Follow) */}
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search streamer name..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCorrect={false}
+          />
+        </View>
+
+        {/* Sub Header Tabs */}
         <View style={styles.tabsRow}>
           {(['Stream', 'Hot', 'Follow'] as const).map((tab) => {
             const isActive = activeTab === tab;
@@ -143,7 +178,7 @@ export const HomeScreen = () => {
           })}
         </View>
 
-        {/* Country Filter Horizontal Bar */}
+        {/* Country Filter Bar */}
         <View style={styles.filterSection}>
           <ScrollView
             horizontal
@@ -177,7 +212,7 @@ export const HomeScreen = () => {
           </ScrollView>
         </View>
 
-        {/* Live Streams Cards Grid */}
+        {/* Stream Grid */}
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#68C700" />
@@ -185,7 +220,7 @@ export const HomeScreen = () => {
           </View>
         ) : (
           <FlatList
-            data={streamers}
+            data={filteredStreamers}
             keyExtractor={(item) => item.id}
             renderItem={renderStreamCard}
             numColumns={2}
@@ -199,6 +234,11 @@ export const HomeScreen = () => {
                 colors={['#68C700']}
                 tintColor="#68C700"
               />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No streamers found</Text>
+              </View>
             }
           />
         )}
@@ -276,11 +316,24 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
+  searchContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
+    paddingBottom: 8,
+  },
+  searchInput: {
+    backgroundColor: '#F2F4F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#111111',
+  },
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 12,
     backgroundColor: '#FFFFFF',
     gap: 20,
@@ -394,6 +447,30 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  liveBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF2B44',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    gap: 4,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  liveText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   cardBottomOverlay: {
     position: 'absolute',
     bottom: 0,
@@ -444,5 +521,15 @@ const styles = StyleSheet.create({
     color: '#111111',
     fontSize: 11,
     fontWeight: '800',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#888888',
+    fontWeight: '600',
   },
 });
