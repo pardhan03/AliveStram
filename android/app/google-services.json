@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "257018401641",
+    "project_id": "alivestream-93f6d",
+    "storage_bucket": "alivestream-93f6d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:257018401641:android:02dca4c600a25b69c763f8",
+        "android_client_info": {
+          "package_name": "com.alivestram"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "257018401641-mfvc53lqk3g2vbcf1bim1t8bp72m24mo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alivestram",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "257018401641-lok39d25evhbk6jtle5lnchtsq4p82eq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPyuObBX3-5xyteY2uY8SnElyrDXtxwno"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "257018401641-lok39d25evhbk6jtle5lnchtsq4p82eq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

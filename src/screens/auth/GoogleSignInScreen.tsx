@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,12 +8,18 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Svg, { Path } from 'react-native-svg';
 import { RootStackParamList } from '../../navigation/types';
 import { IMAGES } from '../../assets/images';
-import Config from "react-native-config";
+import {
+  configureGoogleSignIn,
+  signInWithGoogle,
+  signInAsGuest,
+} from '../../services/auth/authService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'GoogleSignInScreen'>;
 
@@ -42,10 +48,53 @@ const GoogleIcon = () => (
 );
 
 export const GoogleSignInScreen: React.FC<Props> = ({ navigation }) => {
-  const handleGoogleSignIn = () => {
-    // Navigate to Main Bottom Tabs Navigator
-    navigation.replace('MainTabs');
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  const [isLoadingGuest, setIsLoadingGuest] = useState(false);
+
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    if (isLoadingGoogle || isLoadingGuest) return;
+
+    setIsLoadingGoogle(true);
+    try {
+      const user = await signInWithGoogle();
+
+      if (user) {
+        navigation.replace('MainTabs');
+      }
+    } catch (error: any) {
+      console.log(error);
+      if (error.message !== 'SIGN_IN_CANCELLED') {
+        Alert.alert(
+          'Sign-In Error',
+          error.message || 'An error occurred during Google Sign-In.',
+        );
+      }
+    } finally {
+      setIsLoadingGoogle(false);
+    }
   };
+
+  const handleGuestSignIn = async () => {
+    if (isLoadingGoogle || isLoadingGuest) return;
+
+    setIsLoadingGuest(true);
+    try {
+      await signInAsGuest();
+      navigation.replace('MainTabs');
+    } catch (error: any) {
+      // Even if anonymous auth fails on firebase backend, allow entering as guest
+      console.warn('Guest sign-in fallback:', error);
+      navigation.replace('MainTabs');
+    } finally {
+      setIsLoadingGuest(false);
+    }
+  };
+
+  const isBusy = isLoadingGoogle || isLoadingGuest;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -67,20 +116,32 @@ export const GoogleSignInScreen: React.FC<Props> = ({ navigation }) => {
         {/* Action Section */}
         <View style={styles.bottomSection}>
           <TouchableOpacity
-            style={styles.googleButton}
+            style={[styles.googleButton, isBusy && styles.disabledButton]}
             onPress={handleGoogleSignIn}
+            disabled={isBusy}
             activeOpacity={0.85}
           >
-            <GoogleIcon />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
+            {isLoadingGoogle ? (
+              <ActivityIndicator color="#4285F4" size="small" />
+            ) : (
+              <>
+                <GoogleIcon />
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.guestButton}
-            onPress={handleGoogleSignIn}
+            style={[styles.guestButton, isBusy && styles.disabledButton]}
+            onPress={handleGuestSignIn}
+            disabled={isBusy}
             activeOpacity={0.7}
           >
-            <Text style={styles.guestButtonText}>Explore as Guest</Text>
+            {isLoadingGuest ? (
+              <ActivityIndicator color="#68C700" size="small" />
+            ) : (
+              <Text style={styles.guestButtonText}>Explore as Guest</Text>
+            )}
           </TouchableOpacity>
 
           <Text style={styles.termsText}>
@@ -151,6 +212,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
     gap: 12,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   googleButtonText: {
     fontSize: 16,
