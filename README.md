@@ -1,97 +1,187 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 🟢 AliveStream
 
-# Getting Started
+A **live-streaming social platform** built with React Native, featuring real-time streamer discovery, Google authentication, and an engaging community experience across iOS and Android.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## ✨ Features
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- **🎥 Live Stream Discovery** — Browse live streamers with country-based filtering (Global, India, Philippines, Brazil, Vietnam) and real-time search
+- **🔐 Google Sign-In** — Seamless authentication via Firebase Auth with Google Sign-In
+- **🎉 Party Mode** — Join and host virtual party rooms
+- **💬 Chats** — In-app messaging and communication
+- **📡 Go Live** — Start your own live broadcast
+- **👤 User Profile** — View stats (followers, following, gems earned), manage wallet, VIP membership, and account settings
+- **🔔 Notifications & Shopping** — Integrated notification and shopping features
+- **🛡️ Persistent Auth** — Stay signed in across app restarts with Redux Persist
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+---
 
-```sh
-# Using npm
+## 🛠 Tech Stack
+
+| Layer            | Technology                                                   |
+| ---------------- | ------------------------------------------------------------ |
+| **Framework**    | React Native 0.86 · React 19                                |
+| **Language**     | TypeScript                                                   |
+| **Navigation**   | React Navigation 8 (Native Stack + Bottom Tabs)              |
+| **State**        | Redux Toolkit + Redux Persist + Async Storage                |
+| **Auth**         | Firebase Auth + Google Sign-In                               |
+| **Networking**   | Axios                                                        |
+| **Animations**   | React Native Reanimated 4 · React Native Worklets            |
+| **UI**           | React Native SVG · React Native Gesture Handler · Liquid Glass |
+| **Config**       | react-native-config (`.env` based)                           |
+
+---
+
+## 📁 Project Structure
+
+```
+AliveStram/
+├── App.tsx                        # Root component (Redux Provider + Navigation)
+├── index.js                       # App entry point
+├── src/
+│   ├── assets/                    # Static assets (images, fonts, etc.)
+│   ├── components/
+│   │   └── Icons.tsx              # Reusable SVG icon components
+│   ├── config/                    # App-level configuration
+│   ├── navigation/
+│   │   ├── Route.tsx              # Root NavigationContainer
+│   │   ├── AuthenticationRoute.tsx # Auth flow stack (Splash → Sign-In → Main)
+│   │   ├── BottomTabNavigator.tsx # Main tab navigator (5 tabs)
+│   │   ├── CustomTabBar.tsx       # Custom styled bottom tab bar
+│   │   └── types/                 # Navigation type definitions
+│   ├── screens/
+│   │   ├── SplashScreen/          # Animated splash / launch screen
+│   │   ├── auth/
+│   │   │   └── GoogleSignInScreen.tsx  # Google Sign-In flow
+│   │   ├── Home/                  # Live streamer grid with filters & search
+│   │   ├── Party/                 # Party rooms
+│   │   ├── GoLive/                # Broadcast / go-live screen
+│   │   ├── Chats/                 # Messaging screen
+│   │   └── Profile/              # User profile, wallet, settings, logout
+│   ├── services/
+│   │   ├── api/
+│   │   │   └── endpoints.ts      # API endpoint constants
+│   │   ├── auth/                  # Auth service (sign-in, sign-out)
+│   │   ├── streamService.ts      # Streamer data fetching & filtering
+│   │   └── index.ts              # Service barrel exports
+│   ├── store/
+│   │   ├── configureStore.tsx     # Redux store + persist config
+│   │   ├── hooks.ts              # Typed useAppDispatch / useAppSelector
+│   │   └── features/
+│   │       └── user/
+│   │           └── authSlice.tsx  # Auth state (profile, isAuthenticated)
+│   └── utils/                    # Utility functions
+├── android/                       # Android native project
+├── ios/                           # iOS native project
+└── __tests__/                     # Test suite
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** ≥ 22.11.0
+- **React Native CLI** environment set up ([official guide](https://reactnative.dev/docs/set-up-your-environment))
+- **Android Studio** (for Android) / **Xcode** (for iOS)
+
+### Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/pardhan03/AliveStram.git
+   cd AliveStram
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit `.env` with your credentials:
+
+   ```env
+   ENV=development
+   API_BASE_URL=https://dev-api.alivestream.com/v1
+   AUTH_API_URL=https://dev-auth.alivestream.com/v1
+   STREAM_API_URL=https://dev-stream.alivestream.com/v1
+   TIMEOUT=15000
+   PEXELS_API_KEY=your_pexels_api_key_here
+   ```
+
+4. **iOS only — install CocoaPods**
+
+   ```bash
+   cd ios && pod install && cd ..
+   ```
+
+### Running the App
+
+```bash
+# Start Metro bundler
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# Run on Android
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# Run on iOS
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 🧪 Testing
 
-## Step 3: Modify your app
+```bash
+# Run unit tests
+npm test
 
-Now that you have successfully run the app, let's make changes!
+# Run linter
+npm run lint
+```
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+---
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 🗺 Navigation Flow
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+```
+SplashScreen
+  └─→ GoogleSignInScreen (if not authenticated)
+        └─→ MainTabs (after successful sign-in)
+              ├── Home      — Live streamer discovery
+              ├── Party     — Virtual party rooms
+              ├── GoLive    — Start broadcasting
+              ├── Chats     — Messaging
+              └── Profile   — Account & settings
+```
 
-## Congratulations! :tada:
+Authenticated users are automatically redirected past the sign-in screen via persisted Redux state.
 
-You've successfully run and modified your React Native App. :partying_face:
+---
 
-### Now what?
+## 🔑 Environment Variables
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+| Variable         | Description                        |
+| ---------------- | ---------------------------------- |
+| `ENV`            | Environment (`development` / `production`) |
+| `API_BASE_URL`   | Base URL for the main API          |
+| `AUTH_API_URL`    | Authentication service URL         |
+| `STREAM_API_URL`  | Streaming service URL              |
+| `TIMEOUT`        | API request timeout (ms)           |
+| `PEXELS_API_KEY` | Pexels API key for streamer images |
 
-# Troubleshooting
+---
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## 📄 License
 
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+This project is private and proprietary.
